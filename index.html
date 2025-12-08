@@ -1,0 +1,3473 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>Petri Heil – Turnier</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#05090f" />
+  <style>
+    :root{
+      --sound-enabled: 1;
+
+      --bg-dark: #05090f;
+      --bg-gradient-top: #071623;
+      --bg-gradient-bottom: #02040a;
+
+      --panel-bg: rgba(6, 14, 24, 0.96);
+      --panel-border: rgba(148, 163, 184, 0.35);
+      --panel-radius: 16px;
+
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.22);
+      --accent-2: #22c55e;
+      --accent-danger: #fb7185;
+
+      --text: #f9fafb;
+      --text-muted: #9ca3af;
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.75);
+
+      --btn-bg: #111827;
+      --btn-bg-soft: #020617;
+      --btn-border: rgba(148, 163, 184, 0.45);
+      --btn-hover: #1f2937;
+      --btn-active-scale: 0.98;
+      --btn-radius: 999px;
+      --btn-font: 16px;
+
+      --danger-bg: rgba(248, 113, 113, 0.14);
+      --danger-border: rgba(248, 113, 113, 0.55);
+
+      --table-header-bg: rgba(15, 23, 42, 0.96);
+      --row-alt-bg: rgba(15, 23, 42, 0.75);
+      --row-out-bg: rgba(15, 23, 42, 0.38);
+
+      --leader-toast-bg: rgba(17, 24, 39, 0.97);
+      --leader-toast-border: rgba(56, 189, 248, 0.6);
+
+      --mini-water: rgba(56, 189, 248, 0.6);
+      --mini-water-top: rgba(8, 47, 73, 0.95);
+
+      --input-bg: rgba(15, 23, 42, 0.92);
+      --input-border: rgba(148, 163, 184, 0.5);
+      --input-radius: 10px;
+
+      --max-width: 960px;
+      --content-padding: 16px;
+      --screen-gap: 16px;
+
+      --transition-fast: 150ms ease-out;
+      --transition-med: 220ms ease-out;
+    }
+
+    *{
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body{
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, var(--bg-gradient-top), transparent 55%),
+        radial-gradient(circle at bottom, #020617, transparent 55%),
+        linear-gradient(to bottom, var(--bg-gradient-top), var(--bg-gradient-bottom));
+    }
+
+    body{
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    main{
+      flex: 1;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      width: 100%;
+      max-width: none;
+    }
+
+    .app-frame{
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: 12px;
+    }
+
+    @media (min-width: 680px){
+      .app-frame{
+        padding: 22px;
+      }
+    }
+
+    .screen{
+      position: relative;
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      padding: var(--content-padding);
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.75), transparent 65%), var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--panel-radius);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+    }
+
+    .screen-active{
+      display: flex;
+    }
+
+    .screen-inner{
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--screen-gap);
+      max-width: var(--max-width);
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Hauptscreen: Unterwasser-Feeling */
+    #screen-main{
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top, rgba(56, 189, 248, 0.35), transparent 55%),
+        linear-gradient(to bottom, #0ea5e9 0%, #020617 80%);
+    }
+
+       /* Alle Screen-Inhalte liegen über dem Blasen-Layer */
+    .screen .screen-inner{
+      position: relative;
+      z-index: 1;
+    }
+
+
+    /* Blasen-Layer: nur oberer Bereich, damit Buttons unten frei bleiben */
+     .bubble-layer{
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0vh;
+      bottom: 0;
+      z-index: 0;
+      overflow: hidden;
+      /* Standard: nur Deko, keine Klicks blockieren */
+      pointer-events: none;
+    }
+
+    /* Nur im Hauptmenü sollen Blasen klickbar sein */
+    #screen-main .bubble-layer{
+      pointer-events: auto;
+    }
+
+
+    /* einzelne Blase */
+    .bubble{
+      --bubble-size: 18px;
+      --bubble-left: 50%;
+      --bubble-duration: 18s;
+      --bubble-delay: 0s;
+      --bubble-drift: 0px;
+      --bubble-pop-base-transform: translate3d(0,0,0);
+
+      position: absolute;
+      bottom: -60px;
+      left: var(--bubble-left);
+      width: var(--bubble-size);
+      height: var(--bubble-size);
+      border-radius: 999px;
+
+      background:
+        radial-gradient(circle at 30% 30%,
+          rgba(255,255,255,0.95),
+          rgba(191,219,254,0.45) 40%,
+          transparent 70%);
+      box-shadow: 0 0 8px rgba(148, 163, 184, 0.7);
+
+      opacity: 0;
+      animation: bubble-rise var(--bubble-duration) linear infinite;
+      animation-delay: var(--bubble-delay);
+
+      pointer-events: auto;
+      will-change: transform, opacity;
+    }
+
+    /* normale Aufstiegsanimation */
+    @keyframes bubble-rise{
+      0%{
+        transform: translate3d(0, 0, 0) scale(0.6);
+        opacity: 0;
+      }
+      10%{
+        opacity: 0.9;
+      }
+      80%{
+        opacity: 0.95;
+      }
+      100%{
+        transform: translate3d(var(--bubble-drift), -130vh, 0) scale(1.1);
+        opacity: 0;
+      }
+    }
+
+    /* Pop-Animation beim Anklicken */
+    .bubble-pop{
+      animation: bubble-pop 260ms ease-out forwards;
+    }
+
+    @keyframes bubble-pop{
+      0%{
+        transform: var(--bubble-pop-base-transform) scale(1);
+        opacity: 1;
+      }
+      70%{
+        transform: var(--bubble-pop-base-transform) scale(1.35);
+        opacity: 0.95;
+      }
+      100%{
+        transform: var(--bubble-pop-base-transform) scale(0.2);
+        opacity: 0;
+      }
+    }
+
+    .screen-inner.narrow{
+      max-width: 640px;
+    }
+
+    h1, h2, h3{
+      margin: 0;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    h1.title{
+      font-size: clamp(26px, 5vw, 36px);
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    h1.title span{
+      display: block;
+      font-size: 0.64em;
+      font-weight: 600;
+      opacity: 0.9;
+      letter-spacing: 0.25em;
+    }
+
+    .subtitle{
+      margin-top: 6px;
+      font-size: 16px;
+      text-align: center;
+      color: #ffffff;
+    }
+
+    .logo-fish{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 4px 10px;
+      margin-bottom: 6px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--accent-soft);
+    }
+
+    .logo-fish span.icon{
+      font-size: 18px;
+    }
+
+    .menu-buttons{
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 24px;
+      align-items: center;
+    }
+
+    .menu-buttons .btn{
+      width: auto;
+      min-width: 220px;
+      max-width: 280px;
+    }
+
+    .btn{
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: var(--btn-radius);
+      border: 1px solid var(--btn-border);
+      background: radial-gradient(circle at top, rgba(148, 163, 184, 0.18), transparent 60%), var(--btn-bg);
+      color: var(--text);
+      font-size: var(--btn-font);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      transition: background var(--transition-med), transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), opacity 120ms ease-out;
+      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.65);
+    }
+
+    .btn.big{
+      padding-block: 14px;
+      font-size: 17px;
+    }
+
+    .btn.primary{
+      background: radial-gradient(circle at top, rgba(56, 189, 248, 0.3), transparent 55%), linear-gradient(to right, #06b6d4, #22c55e);
+      border-color: rgba(56, 189, 248, 0.85);
+      box-shadow: 0 16px 30px rgba(8, 47, 73, 0.75);
+    }
+
+    .btn.secondary{
+      background: radial-gradient(circle at top, rgba(129, 140, 248, 0.18), transparent 55%), linear-gradient(to right, #1f2937, #020617);
+    }
+
+    .btn.ghost{
+      background: rgba(15, 23, 42, 0.85);
+    }
+
+    .btn.danger{
+      border-color: var(--danger-border);
+      background: radial-gradient(circle at top, rgba(248, 113, 113, 0.22), transparent 60%), var(--btn-bg-soft);
+      color: #fecaca;
+    }
+
+    .btn:disabled{
+      opacity: 0.45;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .btn:active{
+      transform: translateY(1px) scale(var(--btn-active-scale));
+      box-shadow: 0 6px 10px rgba(0,0,0,0.75);
+    }
+
+    .btn span.kbd{
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.85);
+      font-size: 11px;
+      text-transform: none;
+      letter-spacing: 0;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+    }
+
+    .top-bar{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 60%), rgba(15, 23, 42, 0.94);
+      border: 1px solid rgba(148, 163, 184, 0.55);
+    }
+
+    .top-bar .title-small{
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      font-size: 13px;
+    }
+
+    .top-bar .title-small strong{
+      font-size: 14px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .round-info{
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    .badge-mode{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      background: rgba(15, 23, 42, 0.9);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--accent-soft);
+    }
+
+    .badge-mode span.dot{
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--accent-2);
+      box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.28);
+    }
+
+    .badge-mode.elimination span.dot{
+      background: #fb7185;
+      box-shadow: 0 0 0 5px rgba(248, 113, 113, 0.35);
+    }
+
+    .block{
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.9));
+      box-shadow: 0 14px 32px rgba(15, 23, 42, 0.9);
+      padding: 12px 12px 10px;
+    }
+
+    .block-header{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .block-title{
+      font-size: 15px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+    }
+
+    .block-controls{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .block-controls label{
+      font-size: 13px;
+    }
+
+    select, input[type="number"], input[type="text"]{
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--input-bg);
+      border-radius: var(--input-radius);
+      border: 1px solid var(--input-border);
+      padding: 5px 8px;
+      outline: none;
+      min-width: 0;
+    }
+
+    select:focus,
+    input:focus{
+      border-color: rgba(56, 189, 248, 0.9);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.65);
+    }
+
+    input.input-round.input-error{
+      border-color: var(--danger-border);
+      box-shadow: 0 0 0 1px var(--danger-border);
+    }
+
+    .table-wrapper{
+      max-height: clamp(260px, 50vh, 360px);
+      overflow-y: auto;
+      margin-top: 4px;
+    }
+
+    .player-table{
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .player-table th,
+    .player-table td{
+      padding: 6px 6px;
+      text-align: left;
+    }
+
+    .player-table th{
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--text-muted);
+      background: var(--table-header-bg);
+      border-bottom: 1px solid rgba(55, 65, 81, 0.8);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .player-table tbody tr:nth-child(even){
+      background: var(--row-alt-bg);
+    }
+
+    .player-row{
+      border-bottom: 1px solid rgba(31, 41, 55, 0.85);
+      transition: background 160ms ease-out, opacity 160ms ease-out, transform 140ms ease-out;
+    }
+
+    .player-row.row-hidden{
+      display: none;
+    }
+
+    .player-row.is-out{
+      background: var(--row-out-bg) !important;
+      opacity: 0.6;
+    }
+
+   
+
+    .player-row.is-inactive{
+      opacity: 0.45;
+    }
+
+    
+
+    .player-row input.player-name{
+      width: 100%;
+    }
+
+    .player-row input.input-round{
+      width: 100%;
+      text-align: right;
+    }
+
+    .col-rank{
+      width: 3.2rem;
+    }
+
+    .col-total{
+      width: 4.5rem;
+      text-align: right;
+    }
+
+    .col-round{
+      width: 4.8rem;
+    }
+
+    .player-rank{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 26px;
+      min-height: 26px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.65);
+      font-size: 13px;
+    }
+
+    .player-total{
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+
+    
+
+    /* --- Avatare & Namensspalte --- */
+
+    .col-avatar{
+      width: 4.8rem;
+    }
+
+    .player-avatar{
+      position: relative;
+      width: 56px;
+      height: 56px;
+      border-radius: 999px;
+      border: 3px solid rgba(148, 163, 184, 0.85);
+      padding: 0;
+      margin: 0 auto;
+      background: radial-gradient(circle at top, rgba(248, 250, 252, 0.95), rgba(15, 23, 42, 0.98));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.96);
+      transition:
+        transform 120ms ease-out,
+        box-shadow 120ms ease-out,
+        border-color 150ms ease-out,
+        opacity 120ms ease-out;
+    }
+
+    .player-avatar:hover:not(:disabled){
+      transform: translateY(-1px);
+      box-shadow: 0 12px 22px rgba(15, 23, 42, 0.98);
+    }
+
+    .player-avatar:active:not(:disabled){
+      transform: translateY(1px) scale(0.98);
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.98);
+    }
+
+    .player-avatar:disabled{
+      cursor: default;
+      opacity: 0.7;
+      box-shadow: 0 4px 8px rgba(15, 23, 42, 0.9);
+    }
+
+    .player-avatar-inner{
+      width: 48px;
+      height: 48px;
+      border-radius: 999px;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+    }
+
+    .player-avatar-inner.has-image{
+      color: transparent;
+    }
+
+    .player-row input.player-name{
+      width: 100%;
+      max-width: 150px;
+    }
+
+    .block-actions{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: nowrap;
+    }
+
+    .hint{
+      font-size: 16px;
+      color: var(--text-muted);
+    }
+
+    .hint strong{
+      color: var(--accent-soft);
+      font-weight: 500;
+    }
+
+    .highscore-panel{
+      margin-top: auto;
+      margin-bottom: 10px;
+      text-align: center;
+      font-size: 18px;
+      color: var(--text-muted);
+    }
+
+    .highscore-title{
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: #facc15;        /* neue Farbe */
+      margin-bottom: 4px;
+font-weight: 500;      /* fett */
+    }
+
+    .highscore-line{
+      font-size: 16px;
+      line-height: 1.4;
+   
+}
+
+    .modal-backdrop{
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.95), rgba(3, 7, 18, 0.98));
+      backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 40;
+    }
+
+    .modal{
+      max-width: 420px;
+      width: 100%;
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.98));
+      box-shadow: 0 24px 48px rgba(15, 23, 42, 0.98);
+      padding: 18px 18px 14px;
+    }
+
+    .modal h3{
+      font-size: 18px;
+      margin-bottom: 6px;
+    }
+
+    .modal p{
+      margin: 0 0 12px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .modal-actions{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 6px;
+    }
+
+/* JA/Nein-Buttons im Beenden-Dialog zentrieren */
+#exit-modal-backdrop .modal-actions{
+  justify-content: center;
+}
+
+
+/* Schließen-Button im Avatar-Dialog zentrieren */
+.avatar-modal .modal-actions{
+  justify-content: center;
+}
+
+
+    /* Avatar-Auswahl-Modal / App-Galerie */
+    .avatar-modal{
+      max-width: 440px;
+    }
+
+    .avatar-modal-actions{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: space-between;
+      margin: 10px 0 8px;
+    }
+
+    .avatar-gallery{
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+      gap: 8px;
+    }
+
+    .avatar-gallery-item{
+      border: none;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .avatar-gallery-thumb{
+      width: 100%;
+      padding-top: 100%; /* quadratisch */
+      border-radius: 999px;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.95);
+      border: 2px solid rgba(148, 163, 184, 0.85);
+      transition:
+        transform 0.12s ease-out,
+        box-shadow 0.12s ease-out,
+        border-color 0.12s ease-out;
+    }
+
+    .avatar-gallery-item:hover .avatar-gallery-thumb{
+      transform: translateY(-2px);
+      box-shadow: 0 12px 22px rgba(15, 23, 42, 0.98);
+      border-color: rgba(56, 189, 248, 0.9);
+    }
+
+    .avatar-gallery-item:active .avatar-gallery-thumb{
+      transform: translateY(1px) scale(0.98);
+      box-shadow: 0 6px 10px rgba(15, 23, 42, 0.95);
+    }
+
+    .hidden{
+      display: none !important;
+    }
+
+    .leader-toast{
+      position: absolute;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--leader-toast-border);
+      background: radial-gradient(circle at top, rgba(56, 189, 248, 0.28), transparent 55%), var(--leader-toast-bg);
+      box-shadow: 0 16px 32px rgba(15, 23, 42, 0.95);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 30;
+      transition: opacity 180ms ease-out, transform 180ms ease-out;
+    }
+
+    .leader-toast.show{
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .leader-toast span.name{
+      font-weight: 700;
+      color: var(--accent-soft);
+    }
+
+    .toggle{
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 3px;
+      width: 74px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.75);
+      cursor: pointer;
+      transition: border-color var(--transition-med), background var(--transition-med);
+    }
+
+    .toggle-knob{
+      position: relative;
+      width: 32px;
+      height: 26px;
+      border-radius: 999px;
+      background: radial-gradient(circle at top, #22c55e, #16a34a);
+      box-shadow: 0 10px 16px rgba(22, 163, 74, 0.68);
+      transform: translateX(0);
+      transition: transform var(--transition-med), box-shadow var(--transition-med), background var(--transition-med);
+    }
+
+    .toggle.off .toggle-knob{
+      transform: translateX(34px);
+      background: radial-gradient(circle at top, #9ca3af, #4b5563);
+      box-shadow: 0 10px 16px rgba(15, 23, 42, 0.9);
+    }
+
+    .toggle-labels{
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-inline: 9px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .toggle.off .label-on{
+      opacity: 0.25;
+    }
+    .toggle:not(.off) .label-off{
+      opacity: 0.25;
+    }
+
+    .option-row{
+      padding: 10px 10px 8px;
+      border-radius: 14px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: radial-gradient(circle at left, rgba(56, 189, 248, 0.16), transparent 55%), rgba(15, 23, 42, 0.95);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .option-main{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .option-label{
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .option-hint{
+      font-size: 16px;
+      color: var(--text-muted);
+    }
+
+   .options-actions{
+  display: flex;
+  justify-content: flex-start; /* Button nach links */
+  margin-top: 10px;
+}
+
+
+    .rounds-input-row{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .rounds-input-row input{
+      width: 90px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rounds-actions{
+      display: flex;
+      justify-content: space-between;
+      margin-top: 14px;
+      gap: 8px;
+    }
+
+         .winner-headline{
+      margin-top: 10px;
+      margin-bottom: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .ranking-list{
+      margin: 0;
+      padding-left: 0;
+      list-style: none;
+    }
+
+    /* Jedes Ergebnis-Item: eine Zeile in der Mitte */
+    .ranking-item{
+      display: flex;
+      justify-content: center;
+      margin: 10px 0;
+    }
+
+    /* Sieger optisch hervorheben */
+    .ranking-item.winner{
+      color: var(--accent-soft);
+      font-weight: 600;
+    }
+
+    /* Zeile: Pokal – Avatar – InfoBlock (Name über Punkten) */
+    .rank-row{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    /* Avatar im Ranking */
+    .rank-avatar{
+      width: 56px;
+      height: 56px;
+      border-radius: 999px;
+      border: 2px solid rgba(148, 163, 184, 0.75);
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.96));
+      box-shadow: 0 8px 16px rgba(15, 23, 42, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .rank-avatar-inner{
+      width: 44px;
+      height: 44px;
+      border-radius: inherit;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    /* Gewinner-Avatar leuchtet & etwas größer innen */
+    .ranking-item.winner .rank-avatar{
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.65);
+    }
+
+    .ranking-item.winner .rank-avatar-inner{
+      width: 50px;
+      height: 50px;
+      font-size: 26px;
+    }
+
+    /* Block rechts vom Icon: Name oben, Punkte unten */
+    .rank-info{
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      text-align: left;
+    }
+
+    /* Name rechts neben dem Icon, über den Punkten */
+    .rank-name{
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    /* Punkte unter dem Namen */
+    .rank-points{
+      font-size: 14px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-muted);
+    }
+
+    .rank-trophy{
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .rank-trophy img{
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 0 4px rgba(0,0,0,0.7));
+      transition: filter 0.25s ease;
+    }
+
+    .trophy-gold img{
+      filter:
+        invert(78%)
+        sepia(96%)
+        saturate(950%)
+        hue-rotate(5deg)
+        brightness(1.05)
+        contrast(1.05)
+        drop-shadow(0 0 8px rgba(250, 204, 21, 0.9));
+    }
+
+    .trophy-silver img{
+      filter:
+        invert(90%)
+        sepia(5%)
+        saturate(200%)
+        hue-rotate(180deg)
+        brightness(1.3)
+        contrast(0.9)
+        drop-shadow(0 0 8px rgba(209, 213, 219, 0.9));
+    }
+
+    .trophy-bronze img{
+      filter:
+        invert(18%)
+        sepia(96%)
+        saturate(6500%)
+        hue-rotate(0deg)
+        brightness(1.05)
+        contrast(1.1);
+    }
+
+    .rank-trophy.trophy-gold{
+      color: #facc15;
+      text-shadow: 0 0 6px rgba(250, 204, 21, 0.8);
+    }
+
+    .rank-trophy.trophy-silver{
+      color: #e5e7eb;
+      text-shadow: 0 0 6px rgba(209, 213, 219, 0.8);
+    }
+
+    .rank-trophy.trophy-bronze{
+      color: #f97316;
+      text-shadow: 0 0 8px rgba(249, 115, 22, 0.9);
+    }
+
+
+
+    .winner-actions{
+      display: flex;
+      justify-content: space-between;
+      margin-top: 18px;
+      gap: 8px;
+    }
+
+    .help-text{
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .help-list{
+      margin-top: 8px;
+      padding-left: 18px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .mini-bg{
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at top, rgba(56, 189, 248, 0.16), transparent 60%),
+        linear-gradient(to top, #020617, #082f49);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .mini-overlay{
+      position: relative;
+      z-index: 2;
+      max-width: 520px;
+      width: 100%;
+      padding: 18px 18px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(148, 163, 184, 0.75);
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.96));
+      box-shadow: 0 24px 40px rgba(15, 23, 42, 0.98);
+      text-align: center;
+    }
+
+    .mini-title{
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .mini-sub{
+      margin: 0 0 12px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .mini-player-name{
+      color: #bae6fd;
+    }
+
+    .mini-water{
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 0;
+      background: linear-gradient(to top, var(--mini-water), var(--mini-water-top));
+      box-shadow: 0 -18px 40px rgba(8, 47, 73, 0.9);
+      transform-origin: bottom;
+    }
+
+    .mini-water.animate{
+      animation: water-rise 2600ms ease-in forwards;
+    }
+
+    @keyframes water-rise{
+      0%{ height: 0; }
+      50%{ height: 40%; }
+      100%{ height: 75%; }
+    }
+
+    .mini-player{
+      position: absolute;
+      top: 18%;
+      left: 50%;
+      transform: translateX(-50%) translateY(0);
+      width: 148px;
+      height: 148px;
+      border-radius: 999px;
+      border: 2px solid rgba(148, 163, 184, 0.9);
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.96));
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.98);
+      z-index: 1;
+      opacity: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mini-player.show{
+      opacity: 1;
+    }
+
+    .mini-player.fall{
+      animation: mini-player-fall 1200ms cubic-bezier(.22,.7,.2,1.05) forwards;
+    }
+
+    .mini-player-img{
+      width: 140px;
+      height: 140px;
+      border-radius: 999px;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 38px;
+    }
+
+    .mini-player.fall .mini-player-img{
+      animation: mini-player-spin 1200ms linear forwards;
+    }
+
+    @keyframes mini-player-spin{
+      0%{
+        transform: rotate(0deg);
+      }
+      100%{
+        transform: rotate(420deg);
+      }
+    }
+
+    @keyframes mini-player-fall{
+      0%{
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+      60%{
+        transform: translateX(-50%) translateY(160px);
+      }
+      100%{
+        transform: translateX(-50%) translateY(260px);
+        opacity: 0;
+      }
+    }
+
+    .title-row{
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .footer-note{
+      margin-top: auto;
+      font-size: 14px;
+      text-align: center;
+      color: rgba(148, 163, 184, 0.75);
+      padding-top: 6px;
+    }
+
+    .footer-note span.mark{
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    /* Start-Vorbildschirm (Anleitung vor dem Spiel) */
+
+    .start-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 3000;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      background:
+        radial-gradient(circle at top, rgba(15, 23, 42, 0.9), transparent 65%),
+        linear-gradient(to bottom, #020617, #020617);
+      color: var(--text);
+    }
+
+    .start-overlay[hidden] {
+      display: none;
+    }
+
+    .start-inner {
+      box-sizing: border-box;
+      width: min(960px, 100vw);
+      max-height: 100vh;
+      padding: 16px 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+
+    .start-inner h1 {
+      margin: 0 0 4px;
+      font-size: clamp(22px, 4.4vw, 30px);
+      text-align: center;
+    }
+
+    .start-inner .help-text,
+    .start-inner .help-list {
+      font-size: 0.9rem;
+    }
+
+    .start-footer {
+      margin-top: 12px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .btn-start-app {
+      min-width: 260px;
+      font-size: 1rem;
+    }
+
+    @media (max-width: 600px) {
+      .start-inner {
+        padding: 12px 10px 16px;
+      }
+    }
+
+    /* Mobile-Optimierung: Tabelle schmaler machen */
+    @media (max-width: 480px){
+      .player-table th,
+      .player-table td{
+        padding: 4px 3px;
+        font-size: 12px;
+      }
+
+      .player-table th{
+        font-size: 10px;
+        letter-spacing: 0.14em;
+      }
+
+      .col-rank{
+        width: 2.4rem;
+      }
+
+      .col-avatar{
+        width: 3.6rem;
+      }
+
+      .col-total{
+        width: 3.4rem;
+        text-align: right;
+      }
+
+      .col-round{
+        width: 3.4rem;
+      }
+
+      .player-avatar{
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        box-shadow: 0 6px 12px rgba(15, 23, 42, 0.9);
+      }
+
+      .player-avatar-inner{
+        width: 34px;
+        height: 34px;
+        font-size: 20px;
+      }
+
+      .player-rank{
+        min-width: 22px;
+        min-height: 22px;
+        font-size: 11px;
+      }
+
+      .player-row input.player-name{
+        max-width: 120px;
+        font-size: 13px;
+      }
+
+      .player-row input.input-round{
+        font-size: 13px;
+      }
+
+      .block{
+        padding: 8px 8px 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="app-frame">
+
+      <!-- Screen 1: Hauptmenü -->
+      <section id="screen-main" class="screen screen-active">
+        <!-- Blasen-Hintergrund nur im Hauptmenü -->
+        <div class="bubble-layer" id="bubble-layer"></div>
+
+        <div class="screen-inner narrow">
+          <div class="title-row">
+            <h1 class="title">Petri Heil<span>Scoreboard</span></h1>
+            <p class="subtitle">Verwaltet eure Punkte über mehrere Spiele – mit optionaler Spieler-Eliminierung.</p>
+          </div>
+
+          <div class="menu-buttons">
+            <button id="btn-main-start" class="btn primary big">Start</button>
+            <button id="btn-main-options" class="btn secondary big">Optionen</button>
+            <button id="btn-main-help" class="btn ghost big">Anleitung</button>
+            <button id="btn-main-quit" class="btn danger ghost big">Beenden</button>
+          </div>
+
+          <div class="highscore-panel">
+            <div class="highscore-title">Höchstpunktestand</div>
+            <div class="highscore-line" id="hs-best-round">
+              – Punkte in einem Spiel: –
+            </div>
+            <div class="highscore-line" id="hs-best-game">
+              – Punkte in einem Turnier über – Spiele: –
+            </div>
+          </div>
+
+          <div class="footer-note">
+            <span class="mark">Schlachtenbummler-Verlag Crimmitschau</span> – Ronny Dannler 2025
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 2: Optionen -->
+      <section id="screen-options" class="screen">
+        <div class="bubble-layer"></div> <!-- NEU -->
+<div class="screen-inner narrow">
+          <div class="top-bar">
+            <div class="title-small">
+              <strong>Optionen</strong>
+            </div>
+            <div class="badge-mode elimination" id="badge-mode-preview">
+              <span class="dot"></span>
+              <span class="label">Eliminierung</span>
+            </div>
+          </div>
+
+          <div class="block">
+            <div class="option-row">
+              <div class="option-main">
+                <div class="option-label">Eliminierungsmodus</div>
+                <button id="toggle-elimination" class="toggle">
+                  <div class="toggle-knob"></div>
+                  <div class="toggle-labels">
+                    <span class="label-on">AN</span>
+                    <span class="label-off">AUS</span>
+                  </div>
+                </button>
+              </div>
+              <p class="option-hint">Wenn aktiv, scheidet nach jedem Spiel der Spieler mit den wenigsten Endpunkten aus. Bei Gleichstand gibt es keine Eliminierung.</p>
+            </div>
+
+            <div class="option-row" style="margin-top: 10px;">
+              <div class="option-main">
+                <div class="option-label">Sound</div>
+                <button id="toggle-sound" class="toggle">
+                  <div class="toggle-knob"></div>
+                  <div class="toggle-labels">
+                    <span class="label-on">AN</span>
+                    <span class="label-off">AUS</span>
+                  </div>
+                </button>
+              </div>
+              <p class="option-hint">Einzelne Sounds spielen bei Spielwertung, Eliminierung und Sieg ab.</p>
+            </div>
+          </div>
+
+          <div class="options-actions">
+            <button id="btn-options-back" class="btn secondary">Zurück</button>
+          </div>
+
+          <div class="footer-note">
+            Änderungen gelten für das nächste gestartete Turnier.
+          </div>
+        </div>
+      </section>
+
+           <!-- Zwischenbildschirm: Spielrundenanzahl bei deaktivierter Eliminierung -->
+      <section id="screen-rounds" class="screen">
+        <div class="bubble-layer"></div> <!-- NEU: Blasen-Hintergrund -->
+
+        <div class="screen-inner narrow">
+
+          <div class="top-bar">
+            <div class="title-small">
+              <strong>Spielrundenanzahl</strong>
+              <span>Eliminierung deaktiviert</span>
+            </div>
+            <div class="badge-mode">
+              <span class="dot"></span>
+              <span class="label">feste Spielrunden</span>
+            </div>
+          </div>
+
+          <h2 style="margin-top: 10px;">Wie viele Spiele wollt ihr spielen?</h2>
+          <p class="help-text">
+            Spielereliminierung ist deaktiviert. Stattdessen endet das Turnier automatisch nach einer festen Anzahl von Spielen.
+          </p>
+
+          <div class="rounds-input-row">
+            <label for="round-count">Spiele:</label>
+            <input id="round-count" type="number" min="1" max="99" value="5" />
+          </div>
+          <p class="hint">Tipp: <strong>5–10 Spiele</strong> funktionieren für die meisten Turniere „Petri Heil“ sehr gut.</p>
+
+          <div class="rounds-actions">
+            <button id="btn-rounds-back" class="btn secondary">Zurück</button>
+            <button id="btn-rounds-next" class="btn primary">Weiter</button>
+          </div>
+
+          <div class="footer-note">
+            Du kannst die Spielrundenanzahl später jederzeit über ein neues Turnier ändern.
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: Spieler & Punkte -->
+      <section id="screen-game" class="screen">
+        <div class="screen-inner">
+          <div class="top-bar">
+            <div class="title-small">
+              <strong>Petri Heil</strong>
+              <span>Punkte & Ränge</span>
+            </div>
+            <div>
+              <div id="badge-mode-current" class="badge-mode elimination">
+                <span class="dot"></span><span class="label"></span>
+              </div>
+              <div class="round-info" id="round-info"></div>
+            </div>
+          </div>
+
+          <div class="block">
+            <div class="block-header">
+              <div class="block-title">Spieler & Punkte</div>
+              <div class="block-controls">
+                <label for="player-count">Anzahl Spieler:</label>
+                <select id="player-count">
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4" selected>4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-wrapper">
+              <table class="player-table">
+                <thead>
+  <tr>
+    <th class="col-rank">Rang</th>
+    <th class="col-avatar">Bild</th>
+    <th>Name</th>
+    <th class="col-total">Gesamt</th>
+    <th class="col-round">Punkte</th>
+  </tr>
+</thead>
+
+
+                <tbody id="player-tbody">
+  <tr class="player-row" data-id="0">
+    <td class="col-rank"><span class="player-rank">–</span></td>
+    <td class="col-avatar">
+  <button type="button" class="player-avatar">
+    <div class="player-avatar-inner">🎣</div>
+  </button>
+</td>
+    <td><input type="text" class="player-name" placeholder="Spieler 1" maxlength="8" /></td>
+    <td class="col-total"><span class="player-total">0</span></td>
+    <td class="col-round">
+      <input type="number" class="input-round" inputmode="numeric" min="1" step="1" />
+    </td>
+  </tr>
+
+  <tr class="player-row" data-id="1">
+    <td class="col-rank"><span class="player-rank">–</span></td>
+    <td class="col-avatar">
+  <button type="button" class="player-avatar">
+    <div class="player-avatar-inner">🎣</div>
+  </button>
+</td>
+    <td><input type="text" class="player-name" placeholder="Spieler 2" maxlength="8" /></td>
+    <td class="col-total"><span class="player-total">0</span></td>
+    <td class="col-round">
+      <input type="number" class="input-round" inputmode="numeric" min="1" step="1" />
+    </td>
+  </tr>
+
+  <tr class="player-row" data-id="2">
+    <td class="col-rank"><span class="player-rank">–</span></td>
+    <td class="col-avatar">
+  <button type="button" class="player-avatar">
+    <div class="player-avatar-inner">🎣</div>
+  </button>
+</td>
+    <td><input type="text" class="player-name" placeholder="Spieler 3" maxlength="8" /></td>
+    <td class="col-total"><span class="player-total">0</span></td>
+    <td class="col-round">
+      <input type="number" class="input-round" inputmode="numeric" min="1" step="1" />
+    </td>
+  </tr>
+
+  <tr class="player-row" data-id="3">
+    <td class="col-rank"><span class="player-rank">–</span></td>
+    <td class="col-avatar">
+  <button type="button" class="player-avatar">
+    <div class="player-avatar-inner">🎣</div>
+  </button>
+</td>
+    <td><input type="text" class="player-name" placeholder="Spieler 4" maxlength="8" /></td>
+    <td class="col-total"><span class="player-total">0</span></td>
+    <td class="col-round">
+      <input type="number" class="input-round" inputmode="numeric" min="1" step="1" />
+    </td>
+  </tr>
+
+  <tr class="player-row" data-id="4">
+    <td class="col-rank"><span class="player-rank">–</span></td>
+    <td class="col-avatar">
+  <button type="button" class="player-avatar">
+    <div class="player-avatar-inner">🎣</div>
+  </button>
+</td>
+    <td><input type="text" class="player-name" placeholder="Spieler 5" maxlength="8" /></td>
+    <td class="col-total"><span class="player-total">0</span></td>
+    <td class="col-round">
+      <input type="number" class="input-round" inputmode="numeric" min="1" step="1" />
+    </td>
+  </tr>
+
+  <tr class="player-row" data-id="5">
+    <td class="col-rank"><span class="player-rank">–</span></td>
+    <td class="col-avatar">
+  <button type="button" class="player-avatar">
+    <div class="player-avatar-inner">🎣</div>
+  </button>
+</td>
+    <td><input type="text" class="player-name" placeholder="Spieler 6" maxlength="8" /></td>
+    <td class="col-total"><span class="player-total">0</span></td>
+    <td class="col-round">
+      <input type="number" class="input-round" inputmode="numeric" min="1" step="1" />
+    </td>
+  </tr>
+</tbody>
+
+              </table>
+            </div>
+
+            <div class="block-actions">
+              <button id="btn-exit-game" class="btn danger">Beenden</button>
+              <button id="btn-round-apply" class="btn primary">Spiel werten</button>
+            </div>
+
+            <p class="hint">Nach jedem <strong>Spiel</strong> werden die Ränge automatisch neu berechnet. Im Eliminierungsmodus scheidet der Spieler mit den wenigsten Punkten aus.</p>
+          </div>
+
+                   <div id="leader-toast" class="leader-toast hidden">
+            <span class="name" id="leader-name"></span>&nbsp;führt!
+          </div>
+
+        </div> <!-- Ende .screen-inner von #screen-game -->
+
+        <!-- Exit-Dialog (gehört zum Spiel-Screen) -->
+        <div id="exit-modal-backdrop" class="modal-backdrop hidden">
+          <div class="modal">
+            <h3>Wirklich beenden?</h3>
+            <p>Wenn du <strong>Ja</strong> drückst, gehen alle Punkte verloren.</p>
+            <div class="modal-actions">
+              <button id="btn-exit-cancel" class="btn secondary">Nein</button>
+              <button id="btn-exit-confirm" class="btn danger">Ja</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Avatar-Auswahl (gehört ebenfalls zum Spiel-Screen) -->
+        <div id="avatar-modal-backdrop" class="modal-backdrop hidden">
+          <div class="modal avatar-modal">
+            <h3>Avatar wählen</h3>
+            <p>Wähle ein Bild aus der App-Galerie.</p>
+
+            <div id="avatar-gallery" class="avatar-gallery hidden">
+              <!-- Wird per JS mit Bildern gefüllt -->
+            </div>
+
+            <div class="modal-actions">
+              <button id="btn-avatar-close" class="btn ghost">Schließen</button>
+            </div>
+          </div>
+        </div>
+      </section> <!-- Ende #screen-game -->
+
+      <!-- Screen 4: Gewinneranzeige -->
+      <section id="screen-winner" class="screen">
+
+        <div class="bubble-layer"></div> <!-- NEU: Blasen-Hintergrund -->
+
+        <div class="screen-inner narrow">
+          
+          <!-- Nur noch der Gewinner-Text, zentriert -->
+
+          <p class="winner-headline" id="winner-headline">–</p>
+
+          <!-- Zentrierte Liste mit Pokal, Avatar, Punkten & Name -->
+          <ol id="winner-ranking" class="ranking-list"></ol>
+
+          <div class="winner-actions">
+            <button id="btn-winner-again" class="btn primary">Neues Turnier</button>
+            <button id="btn-winner-menu" class="btn secondary">Hauptmenü</button>
+          </div>
+
+          <div class="footer-note" id="footer-tip">
+            🎣 Tipp: Nach dem Turnier gibt’s hier einen zufälligen Angeltipp.
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- Minispiel / Screensaver für Eliminierung -->
+      <section id="screen-mini" class="screen">
+        <div class="mini-bg">
+          <div class="mini-water" id="mini-water"></div>
+
+          <div class="mini-player" id="mini-player">
+            <div class="mini-player-img" id="mini-player-img">🎣</div>
+          </div>
+
+          <div class="mini-overlay">
+            <div class="mini-title" id="mini-title">Petri Heil – Eliminierung</div>
+            <p class="mini-sub">
+              <span class="mini-player-name" id="mini-player-name">Spieler X</span> ist ausgeschieden.
+            </p>
+            <p class="mini-sub">Das Wasser steigt – gleich geht's weiter mit der nächsten Runde.</p>
+            <button id="btn-mini-continue" class="btn primary big">Weiter</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Anleitung -->
+      <section id="screen-help" class="screen">
+       <div class="bubble-layer"></div> <!-- NEU --> 
+<div class="screen-inner narrow">
+          <div class="top-bar">
+            <div class="title-small">
+              <strong>Anleitung</strong>
+            </div>
+          </div>
+
+          <div class="help-content">
+            <h2 style="margin-top: 10px;">So funktioniert die Turnier-App</h2>
+            <p class="help-text">
+              Diese App verwaltet eure Punkte für „Petri Heil“ über mehrere Spiele.
+              Ihr könnt mit bis zu <strong>6 Spielern</strong> spielen und wahlweise einen
+              <strong>Eliminierungsmodus</strong> oder eine feste Anzahl an Spielrunden verwenden.
+            </p>
+            <ul class="help-list">
+              <li>In den <strong>Optionen</strong> festlegen, ob ihr mit Spieler-Eliminierung spielt.</li>
+              <li>Im Hauptmenü auf <strong>Start</strong> klicken.</li>
+              <li>Ohne Eliminierung wählt ihr nach dem Start eine feste <strong>Anzahl an Spielen</strong>.</li>
+              <li>Tragt im Wertungsbildschirm mindestens<strong> 2 Namen</strong> ein.</li>
+              <li>Klickt neben euren Namen auf das runde <strong>Bild</strong>, um es zu ändern.</li>
+              <li>Gebt nach jedem Spiel „Petri Heil“ eure jeweiligen Endpunkte ein.</li>
+              <li>Mit Klick auf <strong>Spiel werten</strong> werden die Ränge neu sortiert und angezeigt, wer im Turnier führt.</li>
+              <li>Im Eliminierungsmodus scheidet der Spieler mit den wenigsten Punkten aus (bei Gleichstand niemand).</li>
+              <li>Das Turnier endet, wenn nur noch ein Spieler übrig ist oder die eingestellte Anzahl an Spielen erreicht wurde.</li>
+            </ul>
+          </div>
+
+          <div class="winner-actions">
+            <button id="btn-help-back" class="btn secondary">Zurück</button>
+          </div>
+
+          <div class="footer-note">
+            Hinweis: Diese App verwaltet nur Punkte – alle „Petri Heil“-Regeln bleiben natürlich bestehen.
+          </div>
+        </div>
+      </section>
+
+      <!-- Sounds -->
+      <audio id="snd-click"   src="assets/snd/click.mp3?v=1"   preload="auto"></audio>
+      <audio id="snd-points"  src="assets/snd/points.mp3?v=1"  preload="auto"></audio>
+      <audio id="snd-splash"  src="assets/snd/splash.mp3?v=1"  preload="auto"></audio>
+      <audio id="snd-fanfare" src="assets/snd/fanfare.mp3?v=1" preload="auto"></audio>
+      <audio id="snd-fail"    src="assets/snd/fail.mp3?v=1"    preload="auto"></audio>
+
+      <!-- Loop: Unterwasser-Atmo im Hauptmenü -->
+      <audio id="snd-underwater" src="assets/snd/underwater.mp3?v=1" preload="auto" loop></audio>
+
+      <!-- Blub-Sounds für platzende Blasen -->
+      <audio id="snd-bub1" src="assets/snd/bub1.mp3?v=1" preload="auto"></audio>
+      <audio id="snd-bub2" src="assets/snd/bub2.mp3?v=1" preload="auto"></audio>
+      <audio id="snd-bub3" src="assets/snd/bub3.mp3?v=1" preload="auto"></audio>
+      <audio id="snd-bub4" src="assets/snd/bub4.mp3?v=1" preload="auto"></audio>
+
+    </div>
+  </main>
+
+  <!-- Vorbildschirm: Anleitung + "App starten" -->
+  <section id="startOverlay" class="start-overlay" aria-label="Anleitung vor dem Start">
+    <div class="start-inner">
+      <h1>Petri Heil – Turnier</h1>
+
+      <p class="help-text">
+        Lies dir kurz die Anleitung durch und starte dann das Turnier im Vollbildmodus.
+      </p>
+
+      <div id="startHelpClone" class="help-clone"></div>
+
+      <div class="start-footer">
+        <button id="btnStartApp" class="btn primary btn-start-app" type="button">
+          App starten
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (function(){
+      "use strict";
+
+      const MAX_PLAYERS = 6;
+
+      // Angeltipps
+      const fishingTips = [
+        "Früh morgens und in der Abenddämmerung sind viele Fische besonders aktiv – plane deine Ausflüge um diese Zeiten herum.",
+        "Leise bewegen: Vibrationen am Ufer können Fische verschrecken. Geh ruhig und vermeide laute Geräusche.",
+        "Passe die Hakengröße an den Köder und die Fischart an – ein zu großer Haken wirkt oft unnatürlich.",
+        "Knoten sind entscheidend: Übe ein bis zwei zuverlässige Angelknoten und kontrolliere sie vor jedem Wurf.",
+        "Beobachte das Wasser: Strömungskanten, Unterstände und Krautfelder sind häufige Hotspots für Fische.",
+        "Wechsle den Köder, wenn längere Zeit nichts beißt – manchmal macht eine andere Farbe oder Form den Unterschied.",
+        "Halte deine Schnur stets leicht auf Spannung, um Bisse frühzeitig zu spüren und besser anschlagen zu können.",
+        "Wind aus gleicher Richtung über längere Zeit kann Futter und damit auch Fische an eine Uferseite treiben.",
+        "Ein aufgeräumtes Tackle erleichtert dir das Angeln: Halte Köder, Zangen und Haken immer griffbereit.",
+        "Nutze möglichst scharfe Haken – stumpfe Haken kosten dich Bisse und damit vielleicht deinen Traumfisch.",
+        "Geduld ist eine der wichtigsten Angel-Fähigkeiten: Bleib konzentriert, auch wenn länger nichts passiert.",
+        "Wechsle hin und wieder die Tiefe, in der du angelst – Fische stehen je nach Wetter und Tageszeit unterschiedlich hoch.",
+        "Notiere dir Fangdatum, Wetter, Köder und Platz in einem einfachen Angeltagebuch, um Muster zu erkennen.",
+        "Schnur regelmäßig prüfen: Kleine Beschädigungen oder Knicke können bei einem starken Fisch zum Schnurbruch führen.",
+        "Passe die Bremskraft deiner Rolle an – zu stramm riskiert Schnurbruch, zu locker verlierst du leicht Spannung.",
+        "Achte auf deine Silhouette: Wenn du direkt am Ufer stehst und dich abzeichnest, können Fische dich wahrnehmen.",
+        "Schonendes Release: Befeuchte deine Hände vor dem Anfassen des Fisches, um seine Schleimschicht zu schützen.",
+        "Bei klarerem Wasser sind unauffällige Vorfächer oft erfolgreicher als dicke, auffällige Schnüre.",
+        "Nach einem Fehlbiss nicht sofort aufgeben – wirf den Köder noch ein bis zwei Mal an die gleiche Stelle.",
+        "Sicherheit nicht vergessen: Trage bei Bootsangeln immer eine Schwimmweste und achte auf Haken in deiner Nähe."
+      ];
+
+      function getRandomFishingTip(){
+        if(!fishingTips.length) return "Angeln heißt warten, beobachten und den Moment genießen.";
+        const idx = Math.floor(Math.random() * fishingTips.length);
+        return fishingTips[idx];
+      }
+
+    const defaultAvatarImages = [
+  "assets/img/p1.jpg",
+  "assets/img/p2.jpg",
+  "assets/img/p3.jpg",
+  "assets/img/p4.jpg",
+  "assets/img/p5.jpg",
+  "assets/img/p6.jpg",
+  "assets/img/p7.jpg",
+  "assets/img/p8.jpg",
+  "assets/img/p9.jpg",
+  "assets/img/p10.jpg",
+  "assets/img/p11.jpg",
+  "assets/img/p12.jpg",
+  "assets/img/p13.jpg",
+  "assets/img/p14.jpg",
+  "assets/img/p15.jpg"
+];
+
+
+
+      const avatarBorderColors = [
+        "#38bdf8",
+        "#f97316",
+        "#a855f7",
+        "#22c55e",
+        "#eab308",
+        "#fb7185"
+      ];
+
+      function shuffleArray(arr){
+        for(let i = arr.length - 1; i > 0; i--){
+          const j = Math.floor(Math.random() * (i + 1));
+          const tmp = arr[i];
+          arr[i] = arr[j];
+          arr[j] = tmp;
+        }
+      }
+
+      function formatPlayerName(raw, fallback){
+        let s = (raw || "").trim();
+
+        if(!s){
+          return "";
+        }
+
+        s = s.toLowerCase();
+        const parts = s.split(/(\s+|-)/);
+        for(let i = 0; i < parts.length; i++){
+          if(parts[i].trim() === "" || parts[i] === "-") continue;
+          parts[i] = parts[i].charAt(0).toUpperCase() + parts[i].slice(1);
+        }
+
+        let result = parts.join("");
+        if(result.length > 15){
+          result = result.slice(0, 15);
+        }
+        return result;
+      }
+
+      const state = {
+        options: {
+          elimination: false,
+          sound: true
+        },
+        playerCount: 4,
+        totalRounds: null,
+        currentRound: 0,
+        players: [],
+        currentLeaderId: null,
+        gameFinished: false,
+        pendingWinnerAfterMini: false,
+        highscores: {
+          bestRoundPoints: 0,
+          bestRoundName: "",
+          bestGamePoints: 0,
+          bestGameName: "",
+          bestGameRounds: 0
+        }
+      };
+
+      const STORAGE_KEY_OPTIONS    = "petriHeilTournamentOptions";
+      const STORAGE_KEY_HIGHSCORES = "petriHeilTournamentHighscores";
+
+      function saveOptionsToStorage(){
+        try{
+          const data = {
+            elimination: !!state.options.elimination,
+            sound: !!state.options.sound
+          };
+          localStorage.setItem(STORAGE_KEY_OPTIONS, JSON.stringify(data));
+        }catch(e){}
+      }
+
+      function saveHighscoresToStorage(){
+        try{
+          const data = {
+            bestRoundPoints: state.highscores.bestRoundPoints,
+            bestRoundName:   state.highscores.bestRoundName,
+            bestGamePoints:  state.highscores.bestGamePoints,
+            bestGameName:    state.highscores.bestGameName,
+            bestGameRounds:  state.highscores.bestGameRounds
+          };
+          localStorage.setItem(STORAGE_KEY_HIGHSCORES, JSON.stringify(data));
+        }catch(e){}
+      }
+
+      function loadFromStorage(){
+        try{
+          const optRaw = localStorage.getItem(STORAGE_KEY_OPTIONS);
+          if(optRaw){
+            const opt = JSON.parse(optRaw);
+            if(typeof opt.elimination === "boolean"){
+              state.options.elimination = opt.elimination;
+            }
+            if(typeof opt.sound === "boolean"){
+              state.options.sound = opt.sound;
+            }
+          }
+
+          const hsRaw = localStorage.getItem(STORAGE_KEY_HIGHSCORES);
+          if(hsRaw){
+            const hs = JSON.parse(hsRaw);
+            if(typeof hs.bestRoundPoints === "number"){
+              state.highscores.bestRoundPoints = hs.bestRoundPoints;
+            }
+            if(typeof hs.bestRoundName === "string"){
+              state.highscores.bestRoundName = hs.bestRoundName;
+            }
+            if(typeof hs.bestGamePoints === "number"){
+              state.highscores.bestGamePoints = hs.bestGamePoints;
+            }
+            if(typeof hs.bestGameName === "string"){
+              state.highscores.bestGameName = hs.bestGameName;
+            }
+            if(typeof hs.bestGameRounds === "number"){
+              state.highscores.bestGameRounds = hs.bestGameRounds;
+            }
+          }
+        }catch(e){}
+      }
+
+      const screens = {
+        main:   document.getElementById("screen-main"),
+        options:document.getElementById("screen-options"),
+        rounds: document.getElementById("screen-rounds"),
+        game:   document.getElementById("screen-game"),
+        winner: document.getElementById("screen-winner"),
+        mini:   document.getElementById("screen-mini"),
+        help:   document.getElementById("screen-help")
+      };
+
+      let currentScreen = "main";
+
+      const btnMainStart   = document.getElementById("btn-main-start");
+      const btnMainOptions = document.getElementById("btn-main-options");
+      const btnMainHelp    = document.getElementById("btn-main-help");
+      const btnMainQuit    = document.getElementById("btn-main-quit");
+
+      const toggleElimination  = document.getElementById("toggle-elimination");
+      const toggleSound        = document.getElementById("toggle-sound");
+      const btnOptionsBack     = document.getElementById("btn-options-back");
+      const badgeModePreview   = document.getElementById("badge-mode-preview");
+
+      const roundCountInput = document.getElementById("round-count");
+      const btnRoundsBack   = document.getElementById("btn-rounds-back");
+      const btnRoundsNext   = document.getElementById("btn-rounds-next");
+
+      const playerCountSelect = document.getElementById("player-count");
+      const playerTbody       = document.getElementById("player-tbody");
+      const playerRows        = Array.from(playerTbody.querySelectorAll(".player-row"));
+
+    const playerAvatarButtons = [];
+let currentAvatarIndex = null;
+
+playerRows.forEach(function(row, idx){
+  const btn = row.querySelector(".player-avatar");
+  if(!btn) return;
+
+  playerAvatarButtons.push(btn);
+
+  // Farbiger Rand je Spieler
+  btn.style.borderColor = avatarBorderColors[idx % avatarBorderColors.length];
+
+  // Klick auf Avatar: App-Galerie öffnen
+  btn.addEventListener("click", function(){
+    if(btn.disabled) return;
+    playSound(sndClick);
+    openAvatarModal(idx);
+  });
+});
+
+      playerAvatarButtons.forEach(function(btn, idx){
+        if(btn){
+          btn.style.borderColor = avatarBorderColors[idx % avatarBorderColors.length];
+        }
+      });
+
+      const btnRoundApply = document.getElementById("btn-round-apply");
+      const btnExitGame   = document.getElementById("btn-exit-game");
+
+      const roundInfo        = document.getElementById("round-info");
+      const badgeModeCurrent = document.getElementById("badge-mode-current");
+      const hsBestRound      = document.getElementById("hs-best-round");
+      const hsBestGame       = document.getElementById("hs-best-game");
+
+      const leaderToast   = document.getElementById("leader-toast");
+      const leaderNameEl  = document.getElementById("leader-name");
+
+      const exitModalBackdrop = document.getElementById("exit-modal-backdrop");
+      const btnExitCancel     = document.getElementById("btn-exit-cancel");
+      const btnExitConfirm    = document.getElementById("btn-exit-confirm");
+     
+// Avatar-Auswahl-Modal
+const avatarModalBackdrop = document.getElementById("avatar-modal-backdrop");
+const avatarGalleryEl     = document.getElementById("avatar-gallery");
+const btnAvatarClose      = document.getElementById("btn-avatar-close");
+
+
+      const winnerHeadline = document.getElementById("winner-headline");
+      const winnerRanking  = document.getElementById("winner-ranking");
+      const btnWinnerAgain = document.getElementById("btn-winner-again");
+      const btnWinnerMenu  = document.getElementById("btn-winner-menu");
+      const footerTipEl    = document.getElementById("footer-tip");
+
+      const miniTitle      = document.getElementById("mini-title");
+      const miniPlayerName = document.getElementById("mini-player-name");
+      const miniWater      = document.getElementById("mini-water");
+      const miniPlayer     = document.getElementById("mini-player");
+      const miniPlayerImg  = document.getElementById("mini-player-img");
+      const btnMiniContinue= document.getElementById("btn-mini-continue");
+
+      const btnHelpBack = document.getElementById("btn-help-back");
+
+      const sndClick   = document.getElementById("snd-click");
+      const sndPoints  = document.getElementById("snd-points");
+      const sndSplash  = document.getElementById("snd-splash");
+      const sndFanfare = document.getElementById("snd-fanfare");
+      const sndFail    = document.getElementById("snd-fail");
+
+      const sndUnderwater = document.getElementById("snd-underwater");
+      const sndBub = [
+        document.getElementById("snd-bub1"),
+        document.getElementById("snd-bub2"),
+        document.getElementById("snd-bub3"),
+        document.getElementById("snd-bub4")
+      ];
+
+      function playSound(audioEl){
+        if(!state.options.sound) return;
+        if(!audioEl) return;
+        try{
+          audioEl.currentTime = 0;
+          audioEl.play().catch(function(){});
+        }catch(e){}
+      }
+
+      function playBubblePopSound(){
+        if(!state.options.sound) return;
+
+        const available = sndBub.filter(function(a){ return !!a; });
+        if(!available.length) return;
+
+        const audioEl = available[Math.floor(Math.random() * available.length)];
+        try{
+          audioEl.currentTime = 0;
+          audioEl.play().catch(function(){});
+        }catch(e){}
+      }
+
+      function setRootSoundFlag(){
+        document.documentElement.style.setProperty("--sound-enabled", state.options.sound ? "1" : "0");
+      }
+
+            function updateUnderwaterLoop(){
+        if(!sndUnderwater) return;
+        try{
+          // Unterwasser-Sound soll auf allen "Menü-Screens" laufen:
+          // Hauptmenü, Optionen, Anleitung, Rundenzahl & Winnerscreen
+          const menuScreens = ["main", "options", "help", "rounds", "winner"];
+          const isMenuScreen = menuScreens.indexOf(currentScreen) !== -1;
+
+          if(isMenuScreen && state.options.sound){
+            sndUnderwater.loop = true;
+            if(sndUnderwater.paused){
+              sndUnderwater.currentTime = 0;
+              sndUnderwater.play().catch(function(){});
+            }
+          }else{
+            sndUnderwater.pause();
+          }
+        }catch(e){}
+      }
+
+
+      function updateToggleVisual(toggleEl, on){
+        if(on){
+          toggleEl.classList.remove("off");
+        }else{
+          toggleEl.classList.add("off");
+        }
+      }
+
+      function updateModeBadges(){
+        const labelMain    = badgeModeCurrent.querySelector(".label");
+        const labelPreview = badgeModePreview.querySelector(".label");
+        if(state.options.elimination){
+          badgeModeCurrent.classList.add("elimination");
+          badgeModePreview.classList.add("elimination");
+          if(labelMain)    labelMain.textContent = "Eliminierung";
+          if(labelPreview) labelPreview.textContent = "Eliminierung";
+        }else{
+          badgeModeCurrent.classList.remove("elimination");
+          badgeModePreview.classList.remove("elimination");
+          if(labelMain)    labelMain.textContent = "feste Runden";
+          if(labelPreview) labelPreview.textContent = "feste Runden";
+        }
+      }
+
+      function showScreen(name){
+        Object.keys(screens).forEach(function(key){
+          screens[key].classList.toggle("screen-active", key === name);
+        });
+        currentScreen = name;
+        updateUnderwaterLoop();
+      }
+
+      let leaderToastTimeout = null;
+      function showLeaderToast(name){
+        if(!leaderToast || !leaderNameEl) return;
+        leaderNameEl.textContent = name;
+        leaderToast.classList.remove("hidden");
+        leaderToast.classList.add("show");
+        if(leaderToastTimeout){
+          clearTimeout(leaderToastTimeout);
+        }
+        leaderToastTimeout = setTimeout(function(){
+          leaderToast.classList.remove("show");
+          leaderToastTimeout = setTimeout(function(){
+            leaderToast.classList.add("hidden");
+          }, 220);
+        }, 3000);
+      }
+
+      function lockPlayerMeta(){
+        playerRows.forEach(function(row){
+          const nameInput   = row.querySelector(".player-name");
+          const avatarBtn   = row.querySelector(".player-avatar");
+          const avatarInput = row.querySelector(".player-avatar-input");
+          if(nameInput)   nameInput.disabled = true;
+          if(avatarBtn)   avatarBtn.disabled = true;
+          if(avatarInput) avatarInput.disabled = true;
+        });
+      }
+
+      function updateRoundInfo(){
+        if(!roundInfo) return;
+        if(state.options.elimination){
+          const activeCount = getActivePlayers().length || state.playerCount;
+          roundInfo.textContent = "Runde " + (state.currentRound) + " · Spieler im Rennen: " + activeCount;
+        }else{
+          const total = state.totalRounds || 0;
+          roundInfo.textContent = "Runde " + (state.currentRound) + " von " + total;
+        }
+      }
+
+      function updateHighscorePanel(){
+        if(!hsBestRound || !hsBestGame) return;
+
+        if(state.highscores.bestRoundPoints > 0){
+          hsBestRound.textContent =
+            state.highscores.bestRoundPoints +
+            " Punkte in einem Spiel: " +
+            state.highscores.bestRoundName;
+        }else{
+          hsBestRound.textContent = "– Punkte in einem Spiel: –";
+        }
+
+        if(state.highscores.bestGamePoints > 0 && state.highscores.bestGameRounds > 0){
+          hsBestGame.textContent =
+            state.highscores.bestGamePoints +
+            " Punkte in einem Turnier über " +
+            state.highscores.bestGameRounds +
+            " Spiele: " +
+            state.highscores.bestGameName;
+        }else{
+          hsBestGame.textContent = "– Punkte in einem Turnier über – Spiele: –";
+        }
+      }
+
+      function updateFooterTip(){
+        if(!footerTipEl) return;
+        const tip = getRandomFishingTip();
+        footerTipEl.textContent = "🎣 Tipp: " + tip;
+      }
+
+     function resetGameState(){
+  state.playerCount  = parseInt(playerCountSelect.value, 10) || 4;
+  state.currentRound = 0;
+  state.players      = [];
+  state.currentLeaderId        = null;
+  state.gameFinished           = false;
+  state.pendingWinnerAfterMini = false;
+
+  // Nur im Eliminierungsmodus Rundenlimit löschen
+  if(state.options.elimination){
+    state.totalRounds = null;
+  }
+
+  playerCountSelect.disabled = false;
+
+  const count = state.playerCount;
+  playerRows.forEach(function(row, idx){
+    row.dataset.id = String(idx);
+
+    const nameInput   = row.querySelector(".player-name");
+    const avatarBtn   = row.querySelector(".player-avatar");
+    const avatarInput = row.querySelector(".player-avatar-input");
+    const totalEl     = row.querySelector(".player-total");
+    const roundInput  = row.querySelector(".input-round");
+
+    if(nameInput){
+      nameInput.disabled = false;
+    }
+    if(avatarBtn){
+      avatarBtn.disabled = false;
+    }
+    if(avatarInput){
+      avatarInput.disabled = false;
+    }
+
+    if(totalEl)   totalEl.textContent = "0";
+    if(roundInput){
+      roundInput.value = "";
+      roundInput.disabled = false;
+      roundInput.classList.remove("input-error");
+    }
+
+    // Status nur noch über CSS-Klassen
+    row.classList.remove("is-out", "is-inactive");
+
+    if(idx < count){
+      row.classList.remove("row-hidden");
+    }else{
+      row.classList.add("row-hidden");
+    }
+  });
+
+  updateRoundInfo();
+  updateHighscorePanel();
+}
+
+
+      function resetGameToDefaults(){
+        playerCountSelect.value = "4";
+
+        const perm = defaultAvatarImages.slice();
+        shuffleArray(perm);
+
+        playerRows.forEach(function(row, idx){
+          const nameInput   = row.querySelector(".player-name");
+          const avatarInner = row.querySelector(".player-avatar-inner");
+          const avatarInput = row.querySelector(".player-avatar-input");
+          const avatarBtn   = row.querySelector(".player-avatar");
+
+          if(nameInput){
+            nameInput.disabled   = false;
+            nameInput.value      = "";
+            nameInput.placeholder= "Spieler " + (idx + 1);
+          }
+          if(avatarInner){
+            const img = perm[idx % perm.length];
+            avatarInner.style.backgroundImage = "url('" + img + "')";
+            avatarInner.textContent = "";
+            avatarInner.classList.add("has-image");
+          }
+          if(avatarInput){
+            avatarInput.value   = "";
+            avatarInput.disabled= false;
+          }
+          if(avatarBtn){
+            avatarBtn.disabled  = false;
+          }
+        });
+
+        resetGameState();
+      }
+
+      function initPlayersFromUI(){
+        state.players = [];
+        const count = state.playerCount;
+        for(let i = 0; i < count; i++){
+          const row       = playerRows[i];
+          const nameInput = row.querySelector(".player-name");
+          const raw       = nameInput ? nameInput.value : "";
+          const fallback  = "Spieler " + (i + 1);
+          const name      = formatPlayerName(raw, fallback);
+
+          if(nameInput){
+            nameInput.value = name;
+          }
+
+          state.players.push({
+            id: i,
+            name: name,
+            points: 0,
+            isOut: false,
+            initialIndex: i
+          });
+        }
+      }
+
+      function ensurePlayersInitialized(){
+        if(state.players.length === 0){
+          initPlayersFromUI();
+        }
+      }
+
+      function getRowByPlayerId(id){
+        for(let i = 0; i < playerRows.length; i++){
+          const row = playerRows[i];
+          if(parseInt(row.dataset.id || "-1", 10) === id){
+            return row;
+          }
+        }
+        return null;
+      }
+
+      function playerCompare(a, b){
+        const aHasName = !!(a.name && a.name.trim());
+        const bHasName = !!(b.name && b.name.trim());
+
+        if(aHasName && !bHasName) return -1;
+        if(!aHasName && bHasName) return 1;
+
+        if(a.isOut && !b.isOut) return 1;
+        if(!a.isOut && b.isOut) return -1;
+
+        if(b.points !== a.points) return b.points - a.points;
+
+        return a.initialIndex - b.initialIndex;
+      }
+
+     function updateScoreboard(){
+  if(!state.players.length) return;
+
+  const sorted = state.players.slice().sort(playerCompare);
+  const tbody  = playerTbody;
+
+  sorted.forEach(function(p, index){
+    const row = getRowByPlayerId(p.id);
+    if(!row) return;
+    tbody.appendChild(row);
+
+    const nameInput  = row.querySelector(".player-name");
+    const totalEl    = row.querySelector(".player-total");
+    const roundInput = row.querySelector(".input-round");
+    const rankEl     = row.querySelector(".player-rank");
+
+    if(nameInput) nameInput.value = p.name;
+    if(totalEl)   totalEl.textContent = String(p.points);
+
+    const hasName = p.name && p.name.trim() !== "";
+
+    if(!hasName){
+      // Spieler ohne Namen: nimmt nicht teil
+      row.classList.remove("is-out");
+      row.classList.add("is-inactive");
+      if(roundInput){
+        roundInput.disabled = true;
+        roundInput.value = "";
+        roundInput.classList.remove("input-error");
+      }
+      if(rankEl)   rankEl.textContent = "–";
+    }else if(p.isOut){
+      // Ausgeschieden
+      row.classList.remove("is-inactive");
+      row.classList.add("is-out");
+      if(roundInput) roundInput.disabled = true;
+      if(rankEl)     rankEl.textContent = "–";
+    }else{
+      // Aktiver Spieler
+      row.classList.remove("is-out", "is-inactive");
+      if(roundInput) roundInput.disabled = false;
+      if(rankEl)     rankEl.textContent = String(index + 1);
+    }
+  });
+}
+
+
+      function getActivePlayers(){
+        return state.players.filter(function(p){
+          return !p.isOut && p.name && p.name.trim() !== "";
+        });
+      }
+
+      function getCurrentLeader(){
+        const active = getActivePlayers();
+        if(!active.length) return null;
+
+        const sorted = active.slice().sort(function(a, b){
+          if(b.points !== a.points) return b.points - a.points;
+          return a.initialIndex - b.initialIndex;
+        });
+
+        return sorted[0] || null;
+      }
+
+      function validateRoundInputs(){
+        ensurePlayersInitialized();
+        const active = getActivePlayers();
+
+        if(active.length < 2){
+          playSound(sndFail);
+          return false;
+        }
+
+        let allOk = true;
+
+        active.forEach(function(p){
+          const row = getRowByPlayerId(p.id);
+          if(!row) return;
+
+          const input = row.querySelector(".input-round");
+          if(!input || input.disabled) return;
+
+          const v = parseInt(input.value, 10);
+          if(isNaN(v) || v <= 0){
+            allOk = false;
+            input.classList.add("input-error");
+          }else{
+            input.classList.remove("input-error");
+          }
+        });
+
+        if(!allOk){
+          const firstBad = active.find(function(p){
+            const row = getRowByPlayerId(p.id);
+            if(!row) return false;
+            const input = row.querySelector(".input-round");
+            if(!input || input.disabled) return false;
+            const v = parseInt(input.value, 10);
+            return isNaN(v) || v <= 0;
+          });
+
+          if(firstBad){
+            const row = getRowByPlayerId(firstBad.id);
+            if(row){
+              const input = row.querySelector(".input-round");
+              if(input){
+                input.focus();
+                if(input.select) input.select();
+              }
+            }
+          }
+
+          playSound(sndFail);
+          return false;
+        }
+
+        const values = [];
+        active.forEach(function(p){
+          const row = getRowByPlayerId(p.id);
+          if(!row) return;
+
+          const input = row.querySelector(".input-round");
+          if(!input || input.disabled) return;
+
+          const v = parseInt(input.value, 10);
+          if(!isNaN(v) && v > 0){
+            values.push(v);
+          }
+        });
+
+        if(!values.length){
+          playSound(sndFail);
+          return false;
+        }
+
+        const max = Math.max.apply(null, values);
+        let countMax = 0;
+        values.forEach(function(v){
+          if(v === max) countMax++;
+        });
+
+        if(countMax !== 1){
+          active.forEach(function(p){
+            const row = getRowByPlayerId(p.id);
+            if(!row) return;
+            const input = row.querySelector(".input-round");
+            if(!input || input.disabled) return;
+            input.classList.add("input-error");
+          });
+
+          playSound(sndFail);
+          return false;
+        }
+
+        return true;
+      }
+
+      function applyRound(){
+        if(state.gameFinished) return;
+
+        if(!validateRoundInputs()){
+          return;
+        }
+
+        ensurePlayersInitialized();
+
+        const active = getActivePlayers();
+        if(!active.length) return;
+
+        const isFirstRound = (state.currentRound === 0);
+
+        let bestThisRoundPoints = 0;
+        let bestThisRoundName   = "";
+
+        active.forEach(function(p){
+          const row = getRowByPlayerId(p.id);
+          if(!row) return;
+
+          const roundInput = row.querySelector(".input-round");
+          let delta = 0;
+
+          if(roundInput){
+            const v = parseInt(roundInput.value, 10);
+            if(!isNaN(v) && v > 0) delta = v;
+
+            roundInput.value = "";
+            roundInput.classList.remove("input-error");
+          }
+
+          p.points += delta;
+
+          if(delta > bestThisRoundPoints){
+            bestThisRoundPoints = delta;
+            bestThisRoundName   = p.name;
+          }
+        });
+
+        if(bestThisRoundPoints > state.highscores.bestRoundPoints){
+          state.highscores.bestRoundPoints = bestThisRoundPoints;
+          state.highscores.bestRoundName   = bestThisRoundName;
+          saveHighscoresToStorage();
+        }
+
+        state.currentRound += 1;
+
+        const previousLeaderId = state.currentLeaderId;
+        updateScoreboard();
+        const leader = getCurrentLeader();
+        if(leader){
+          state.currentLeaderId = leader.id;
+          if(previousLeaderId === null || previousLeaderId !== leader.id){
+            showLeaderToast(leader.name);
+          }
+        }
+
+        if(isFirstRound){
+          lockPlayerMeta();
+        }
+
+        playSound(sndPoints);
+
+        if(state.options.elimination){
+          handleEliminationAfterRound();
+        }else{
+          if(state.totalRounds && state.currentRound >= state.totalRounds){
+            finishGame();
+          }
+        }
+
+        updateRoundInfo();
+        updateHighscorePanel();
+        playerCountSelect.disabled = state.currentRound > 0;
+      }
+
+      function handleEliminationAfterRound(){
+        const active = getActivePlayers();
+        if(active.length <= 1){
+          finishGame();
+          return;
+        }
+
+        let minPoints = Infinity;
+        active.forEach(function(p){
+          if(p.points < minPoints) minPoints = p.points;
+        });
+
+        const candidates = active.filter(function(p){ return p.points === minPoints; });
+        if(candidates.length === 1){
+          const loser = candidates[0];
+          loser.isOut = true;
+          updateScoreboard();
+
+          const remaining = getActivePlayers();
+          state.pendingWinnerAfterMini = remaining.length === 1;
+
+          showEliminationMiniGame(loser);
+        }else{
+          // Gleichstand: keine Eliminierung
+        }
+      }
+
+      function showEliminationMiniGame(player){
+        miniTitle.textContent = "Petri Heil – Eliminierung";
+        miniPlayerName.textContent = player.name;
+
+        if(miniWater){
+          miniWater.classList.remove("animate");
+          void miniWater.offsetWidth;
+        }
+        if(miniPlayer){
+          miniPlayer.classList.remove("fall", "show");
+        }
+        if(miniPlayerImg){
+          miniPlayerImg.style.backgroundImage = "";
+          miniPlayerImg.textContent = "🎣";
+
+          const row = getRowByPlayerId(player.id);
+          if(row){
+            const inner = row.querySelector(".player-avatar-inner");
+            const avatarBtn = row.querySelector(".player-avatar");
+            if(inner){
+              const bg = inner.style.backgroundImage;
+              if(bg && bg !== ""){
+                miniPlayerImg.style.backgroundImage = bg;
+                miniPlayerImg.textContent = "";
+              }
+            }
+            if(avatarBtn && miniPlayer){
+              const bc = avatarBtn.style.borderColor;
+              if(bc){
+                miniPlayer.style.borderColor = bc;
+              }
+            }
+          }
+        }
+
+        showScreen("mini");
+
+        if(btnMiniContinue){
+          btnMiniContinue.disabled = true;
+        }
+
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){
+            if(miniWater){
+              miniWater.classList.add("animate");
+            }
+            if(miniPlayer){
+              miniPlayer.classList.add("show");
+
+              setTimeout(function(){
+                miniPlayer.classList.add("fall");
+                playSound(sndSplash);
+              }, 1400);
+            }else{
+              playSound(sndSplash);
+            }
+
+            setTimeout(function(){
+              if(btnMiniContinue){
+                btnMiniContinue.disabled = false;
+              }
+            }, 2800);
+          });
+        });
+      }
+
+      function haveSameRankForTrophy(a, b){
+        if(!a || !b) return false;
+
+        if(!!a.isOut !== !!b.isOut) return false;
+
+        return a.points === b.points;
+      }
+
+          function finishGame(){
+        state.gameFinished = true;
+
+        let allPlayers = [];
+        let winners    = [];
+        let headline   = "";
+
+        // Nur Spieler mit eingetragenem Namen zählen
+        const namedPlayers = state.players.filter(function(p){
+          return p.name && p.name.trim() !== "";
+        });
+
+        if(!namedPlayers.length){
+          return;
+        }
+
+        if(state.options.elimination){
+          // Eliminierungsmodus: Sieger ist der/die letzte(n) aktive(n),
+          // bei mehreren Aktiven entscheidet die Punktzahl.
+          allPlayers = namedPlayers.slice().sort(playerCompare);
+          const active = allPlayers.filter(function(p){ return !p.isOut; });
+
+          let bestScore = 0;
+
+          if(active.length === 0){
+            // Fallback: höchster Punktestand insgesamt
+            bestScore = Math.max.apply(null, namedPlayers.map(function(p){ return p.points; }));
+            winners   = namedPlayers.filter(function(p){ return p.points === bestScore; });
+          }else if(active.length === 1){
+            winners   = [active[0]];
+            bestScore = active[0].points;
+          }else{
+            bestScore = Math.max.apply(null, active.map(function(p){ return p.points; }));
+            winners   = active.filter(function(p){ return p.points === bestScore; });
+          }
+
+          if(winners.length === 1){
+            headline =
+              winners[0].name +
+              " hat mit " +
+              bestScore +
+              " Punkten das Turnier gewonnen!";
+          }else{
+            const names = winners.map(function(p){ return p.name; }).join(", ");
+            headline =
+              names +
+              " haben gemeinsam mit " +
+              bestScore +
+              " Punkten das Turnier gewonnen!";
+          }
+        }else{
+          // Kein Eliminierungsmodus: reine Gesamtpunktzahl
+          allPlayers = namedPlayers.slice().sort(function(a, b){
+            if(b.points !== a.points) return b.points - a.points;
+            return a.initialIndex - b.initialIndex;
+          });
+
+          const bestScore = allPlayers[0].points;
+          winners = allPlayers.filter(function(p){ return p.points === bestScore; });
+
+          if(winners.length === 1){
+            headline =
+              winners[0].name +
+              " hat mit " +
+              bestScore +
+              " Punkten das Turnier gewonnen!";
+          }else{
+            const names = winners.map(function(p){ return p.name; }).join(", ");
+            headline =
+              names +
+              " haben gemeinsam mit " +
+              bestScore +
+              " Punkten das Turnier gewonnen!";
+          }
+        }
+
+        // Gewinner-Text (einzige Überschrift)
+        winnerHeadline.textContent = headline;
+
+        // Rangliste füllen
+        winnerRanking.innerHTML = "";
+        if(allPlayers && allPlayers.length){
+
+          // Ränge gruppieren: gleiche Punkte + gleicher Status → gleicher Rang
+          const ranks = [];
+          let currentRank = 1;
+
+          for(let i = 0; i < allPlayers.length; i++){
+            if(i === 0){
+              ranks[i] = 1;
+            }else{
+              const prev = allPlayers[i - 1];
+              const cur  = allPlayers[i];
+
+              if(haveSameRankForTrophy(prev, cur)){
+                ranks[i] = currentRank;
+              }else{
+                currentRank++;
+                ranks[i] = currentRank;
+              }
+            }
+          }
+
+          allPlayers.forEach(function(p, index){
+            const li = document.createElement("li");
+            li.className = "ranking-item";
+
+            const isWinner = winners.indexOf(p) !== -1;
+            if(isWinner){
+              li.classList.add("winner");
+            }
+
+            const rowDiv = document.createElement("div");
+            rowDiv.className = "rank-row";
+
+            // Rang/Pokal links
+            const rank = ranks[index] || (index + 1);
+            const trophySpan = document.createElement("span");
+            trophySpan.className = "rank-trophy";
+
+             if (rank === 1 || rank === 2 || rank === 3) {
+     const img = document.createElement("img");
+     // WICHTIG: exakt wie der Dateiname im Ordner
+     img.src = "assets/img/pokal.svg";
+     img.alt = "Pokal";
+
+     // Fallback: wenn das Bild nicht geladen werden kann,
+     // nimm einfach ein Trophy-Emoji statt kaputtem Icon.
+     img.addEventListener("error", function () {
+       if (this.parentNode) {
+         this.parentNode.removeChild(this);
+       }
+       trophySpan.textContent = "🏆";
+     });
+
+     if (rank === 1) {
+       trophySpan.classList.add("trophy-gold");
+     } else if (rank === 2) {
+       trophySpan.classList.add("trophy-silver");
+     } else {
+       trophySpan.classList.add("trophy-bronze");
+     }
+
+     trophySpan.appendChild(img);
+   } else {
+     trophySpan.textContent = rank + ".";
+   }
+
+
+            rowDiv.appendChild(trophySpan);
+
+            // Avatar in der Mitte
+            const avatarWrapper = document.createElement("div");
+            avatarWrapper.className = "rank-avatar";
+
+            const avatarInner = document.createElement("div");
+            avatarInner.className = "rank-avatar-inner";
+
+            const row = getRowByPlayerId(p.id);
+            if(row){
+              const srcInner = row.querySelector(".player-avatar-inner");
+              const srcBtn   = row.querySelector(".player-avatar");
+
+              if(srcInner){
+                const bg = srcInner.style.backgroundImage;
+                if(bg && bg !== ""){
+                  avatarInner.style.backgroundImage = bg;
+                  avatarInner.textContent = "";
+                }else{
+                  avatarInner.textContent = srcInner.textContent || "🎣";
+                }
+              }else{
+                avatarInner.textContent = "🎣";
+              }
+
+              if(srcBtn && srcBtn.style.borderColor){
+                avatarWrapper.style.borderColor = srcBtn.style.borderColor;
+              }
+            }else{
+              avatarInner.textContent = "🎣";
+            }
+
+            avatarWrapper.appendChild(avatarInner);
+            rowDiv.appendChild(avatarWrapper);
+
+            // Info-Block rechts: Name oben, Punkte unten
+            const infoDiv = document.createElement("div");
+            infoDiv.className = "rank-info";
+
+            const nameDiv = document.createElement("div");
+            nameDiv.className = "rank-name";
+            nameDiv.textContent = p.name;
+            infoDiv.appendChild(nameDiv);
+
+            const pointsDiv = document.createElement("div");
+            pointsDiv.className = "rank-points";
+            pointsDiv.textContent = p.points + " Punkte";
+            infoDiv.appendChild(pointsDiv);
+
+            rowDiv.appendChild(infoDiv);
+
+            li.appendChild(rowDiv);
+            winnerRanking.appendChild(li);
+          });
+        }
+
+        // Highscore bestes Spiel (Punkte des Siegers – erster Gewinner reicht)
+        let championPoints = 0;
+        if(winners && winners.length){
+          championPoints = winners[0].points || 0;
+        }
+
+        if(championPoints > state.highscores.bestGamePoints){
+          state.highscores.bestGamePoints = championPoints;
+          state.highscores.bestGameRounds = state.currentRound;
+          state.highscores.bestGameName   = winners.map(function(p){ return p.name; }).join(", ");
+          saveHighscoresToStorage();
+        }
+        updateHighscorePanel();
+
+        playSound(sndFanfare);
+        showScreen("winner");
+        updateFooterTip();
+      }
+
+
+
+      function startNewGameFromMain(){
+        resetGameState();
+        updateModeBadges();
+        if(state.options.elimination){
+          state.totalRounds = null;
+          showScreen("game");
+          ensurePlayersInitialized();
+          updateScoreboard();
+          updateRoundInfo();
+        }else{
+          showScreen("rounds");
+        }
+      }
+
+      function confirmExitToMain(){
+        exitModalBackdrop.classList.remove("hidden");
+      }
+
+      function cancelExitToMain(){
+        exitModalBackdrop.classList.add("hidden");
+      }
+
+      function doExitToMain(){
+        exitModalBackdrop.classList.add("hidden");
+        resetGameToDefaults();
+        showScreen("main");
+      }
+
+      // Events
+
+      btnMainStart.addEventListener("click", function(){
+        playSound(sndClick);
+        startNewGameFromMain();
+      });
+
+      btnMainOptions.addEventListener("click", function(){
+        playSound(sndClick);
+        showScreen("options");
+      });
+
+      btnMainHelp.addEventListener("click", function(){
+        playSound(sndClick);
+        showScreen("help");
+      });
+
+      btnMainQuit.addEventListener("click", function(){
+        playSound(sndClick);
+        window.location.href = "https://www.schlachtenbummler-verlag.de";
+      });
+
+      toggleElimination.addEventListener("click", function(){
+        playSound(sndClick);
+        state.options.elimination = !state.options.elimination;
+        updateToggleVisual(toggleElimination, state.options.elimination);
+        updateModeBadges();
+        saveOptionsToStorage();
+      });
+
+      toggleSound.addEventListener("click", function(){
+        state.options.sound = !state.options.sound;
+        updateToggleVisual(toggleSound, state.options.sound);
+        setRootSoundFlag();
+        saveOptionsToStorage();
+        updateUnderwaterLoop();
+        playSound(sndClick);
+      });
+
+      btnOptionsBack.addEventListener("click", function(){
+        playSound(sndClick);
+        showScreen("main");
+      });
+
+      btnRoundsBack.addEventListener("click", function(){
+        playSound(sndClick);
+        showScreen("main");
+      });
+
+      btnRoundsNext.addEventListener("click", function(){
+        playSound(sndClick);
+        const value = parseInt(roundCountInput.value, 10);
+        if(isNaN(value) || value <= 0){
+          roundCountInput.focus();
+          return;
+        }
+        resetGameState();
+        state.totalRounds = value;
+        showScreen("game");
+        ensurePlayersInitialized();
+        updateScoreboard();
+        updateRoundInfo();
+      });
+
+      playerCountSelect.addEventListener("change", function(){
+        const val = parseInt(playerCountSelect.value, 10);
+        if(state.currentRound > 0){
+          playerCountSelect.value = String(state.playerCount);
+          return;
+        }
+        if(!isNaN(val) && val >= 2 && val <= MAX_PLAYERS){
+          state.playerCount = val;
+          resetGameState();
+          ensurePlayersInitialized();
+          updateScoreboard();
+        }
+      });
+
+      // Name-Felder: Placeholder-verhalten + Formatierung
+      playerRows.forEach(function(row){
+        const nameInput = row.querySelector(".player-name");
+        if(!nameInput) return;
+
+        nameInput.addEventListener("focus", function(){
+          const val         = nameInput.value.trim();
+          const placeholder = nameInput.getAttribute("placeholder") || "";
+
+          if(
+            !val ||
+            val === placeholder ||
+            /^Spieler\s*\d*$/i.test(val)
+          ){
+            nameInput.value = "";
+          }
+        });
+
+        nameInput.addEventListener("change", function(){
+          const id     = parseInt(row.dataset.id || "-1", 10);
+          let player = state.players.find(function(p){ return p.id === id; });
+
+          if(!player){
+            ensurePlayersInitialized();
+            player = state.players.find(function(p){ return p.id === id; });
+            if(!player) return;
+          }
+
+          const fallback  = "Spieler " + (player.initialIndex + 1);
+          const formatted = formatPlayerName(nameInput.value, fallback);
+
+          player.name     = formatted;
+          nameInput.value = formatted;
+
+          updateScoreboard();
+        });
+      });
+
+    function openAvatarModal(idx){
+  currentAvatarIndex = idx;
+  if(avatarGalleryEl){
+    avatarGalleryEl.classList.remove("hidden");   // Galerie direkt anzeigen
+  }
+  if(avatarModalBackdrop){
+    avatarModalBackdrop.classList.remove("hidden");
+  }
+}
+
+function closeAvatarModal(){
+  currentAvatarIndex = null;
+  if(avatarModalBackdrop){
+    avatarModalBackdrop.classList.add("hidden");
+  }
+  if(avatarGalleryEl){
+    avatarGalleryEl.classList.add("hidden");
+  }
+}
+
+
+      function buildAvatarGallery(){
+        if(!avatarGalleryEl) return;
+
+        avatarGalleryEl.innerHTML = "";
+
+        // Verwende die Standard-Avatarbilder aus defaultAvatarImages
+        defaultAvatarImages.forEach(function(src){
+          const btn   = document.createElement("button");
+          btn.type    = "button";
+          btn.className = "avatar-gallery-item";
+
+          const thumb = document.createElement("div");
+          thumb.className = "avatar-gallery-thumb";
+          thumb.style.backgroundImage = "url('" + src + "')";
+
+          btn.appendChild(thumb);
+
+          btn.addEventListener("click", function(){
+            if(currentAvatarIndex == null) return;
+            const row = playerRows[currentAvatarIndex];
+            if(!row) return;
+
+            const avatarInner = row.querySelector(".player-avatar-inner");
+            if(avatarInner){
+              avatarInner.style.backgroundImage = "url('" + src + "')";
+              avatarInner.textContent = "";
+              avatarInner.classList.add("has-image");
+            }
+
+            closeAvatarModal();
+          });
+
+          avatarGalleryEl.appendChild(btn);
+        });
+      }
+
+
+           
+
+    // Avatar-Modal Button: Schließen
+if(btnAvatarClose){
+  btnAvatarClose.addEventListener("click", function(){
+    playSound(sndClick);
+    closeAvatarModal();
+  });
+}
+
+     
+
+
+      btnRoundApply.addEventListener("click", function(){
+        playSound(sndClick);
+        applyRound();
+      });
+
+      btnExitGame.addEventListener("click", function(){
+        playSound(sndClick);
+        confirmExitToMain();
+      });
+
+      btnExitCancel.addEventListener("click", function(){
+        playSound(sndClick);
+        cancelExitToMain();
+      });
+
+      btnExitConfirm.addEventListener("click", function(){
+        playSound(sndClick);
+        doExitToMain();
+      });
+
+      btnWinnerAgain.addEventListener("click", function(){
+        playSound(sndClick);
+        startNewGameFromMain();
+      });
+
+      btnWinnerMenu.addEventListener("click", function(){
+        playSound(sndClick);
+        resetGameToDefaults();
+        showScreen("main");
+      });
+
+      btnMiniContinue.addEventListener("click", function(){
+        playSound(sndClick);
+        if(state.pendingWinnerAfterMini){
+          finishGame();
+        }else{
+          showScreen("game");
+        }
+      });
+
+      btnHelpBack.addEventListener("click", function(){
+        playSound(sndClick);
+        showScreen("main");
+      });
+
+            // Unterwasser-Blasen
+
+      const bubbleRegistry = [];
+
+      function randomizeBubble(el){
+        if(!el) return;
+
+        let size;
+        if(Math.random() < 0.25){
+          size = 30 + Math.random() * 26;   // ein paar größere Blasen
+        }else{
+          size = 8 + Math.random() * 22;    // Standardgröße
+        }
+
+        const left = Math.random() * 100;
+
+        const duration = 10 + Math.random() * 20;
+        const delay    = -Math.random() * duration;
+        const drift    = (Math.random() * 40 - 20) + "px";
+
+        el.style.setProperty("--bubble-size",     size + "px");
+        el.style.setProperty("--bubble-left",     left + "%");
+        el.style.setProperty("--bubble-duration", duration + "s");
+        el.style.setProperty("--bubble-delay",    delay + "s");
+        el.style.setProperty("--bubble-drift",    drift);
+      }
+
+      function popBubble(el){
+        if(!el) return;
+
+        playBubblePopSound();
+
+        const cs = window.getComputedStyle(el);
+        const t  = cs.transform === "none" ? "translate3d(0,0,0)" : cs.transform;
+        el.style.setProperty("--bubble-pop-base-transform", t);
+
+        el.classList.add("bubble-pop");
+
+        el.addEventListener("animationend", function handler(){
+          el.removeEventListener("animationend", handler);
+          el.classList.remove("bubble-pop");
+          el.style.removeProperty("--bubble-pop-base-transform");
+
+          randomizeBubble(el);
+        });
+      }
+
+      // Screen-Key (main, options, rounds, ...) zu einem Screen-Element finden
+      function getScreenKeyFromElement(screenEl){
+        if(!screenEl) return null;
+        for(const key in screens){
+          if(Object.prototype.hasOwnProperty.call(screens, key)){
+            if(screens[key] === screenEl){
+              return key; // z.B. "main" oder "winner"
+            }
+          }
+        }
+        return null;
+      }
+
+      function initBubbleLayer(){
+        // Alle Blasen-Layer in allen Screens
+        bubbleRegistry.length = 0;
+
+        const layers = document.querySelectorAll(".bubble-layer");
+        if(!layers.length) return;
+
+        layers.forEach(function(layer){
+          layer.innerHTML = "";
+
+          const parentScreen = layer.closest(".screen");
+          const screenKey    = getScreenKeyFromElement(parentScreen);
+
+          const bubbleCount = 22;
+          for(let i = 0; i < bubbleCount; i++){
+            const el = document.createElement("div");
+            el.className = "bubble";
+
+            randomizeBubble(el);
+
+            bubbleRegistry.push({
+              el: el,
+              screenKey: screenKey
+            });
+
+            layer.appendChild(el);
+          }
+        });
+      }
+
+      // Globaler "Treffer-Test" für Blasen (größerer unsichtbarer Hit-Bereich)
+      function handleGlobalBubbleHit(ev){
+        // Wenn der Start-Overlay noch oben ist, keine Blasen treffen
+        var overlay = document.getElementById("startOverlay");
+        if(overlay && !overlay.hasAttribute("hidden")) return;
+
+        // Klicks auf Buttons / Eingaben nicht abfangen
+        if(ev.target.closest && ev.target.closest("button, .btn, input, select, textarea")){
+          return;
+        }
+
+        if(!bubbleRegistry.length) return;
+
+        const x = ev.clientX;
+        const y = ev.clientY;
+
+        let best = null;
+        let bestDistSq = Infinity;
+
+        bubbleRegistry.forEach(function(entry){
+          const el        = entry.el;
+          const screenKey = entry.screenKey;
+
+          // Nur Blasen des aktuell sichtbaren Screens berücksichtigen
+          if(screenKey && screenKey !== currentScreen){
+            return;
+          }
+
+          const rect = el.getBoundingClientRect();
+
+          // Blasen außerhalb des sichtbaren Bereichs ignorieren
+          if(rect.bottom < 0 || rect.top > window.innerHeight ||
+             rect.right  < 0 || rect.left > window.innerWidth){
+            return;
+          }
+
+          const cx = rect.left + rect.width  / 2;
+          const cy = rect.top  + rect.height / 2;
+
+          const dx = x - cx;
+          const dy = y - cy;
+          const distSq = dx*dx + dy*dy;
+
+          // "Treffradius": etwas größer als die sichtbare Blase
+          const radius = rect.width * 1.1;
+          if(distSq <= radius*radius && distSq < bestDistSq){
+            bestDistSq = distSq;
+            best = el;
+          }
+        });
+
+        if(best){
+          ev.preventDefault();
+          ev.stopPropagation();
+          popBubble(best);
+        }
+      }
+
+      const pointerEvt = window.PointerEvent ? "pointerdown" : "mousedown";
+      document.addEventListener(pointerEvt, handleGlobalBubbleHit, {
+        capture: true,
+        passive: false
+      });
+
+
+
+
+           // Init
+
+      loadFromStorage();
+
+      updateToggleVisual(toggleElimination, state.options.elimination);
+      updateToggleVisual(toggleSound, state.options.sound);
+      setRootSoundFlag();
+      updateModeBadges();
+
+      updateUnderwaterLoop();
+
+      buildAvatarGallery();      // NEU: App-Galerie vorbereiten
+
+      resetGameToDefaults();
+      ensurePlayersInitialized();
+      updateScoreboard();
+      updateRoundInfo();
+      updateHighscorePanel();
+      initBubbleLayer();
+
+
+    })();
+  </script>
+
+  <!-- Extra-Script: Vorbildschirm + echter Vollbildmodus -->
+  <script>
+    (function () {
+      var startOverlay   = document.getElementById("startOverlay");
+      var startHelpClone = document.getElementById("startHelpClone");
+      var btnStartApp    = document.getElementById("btnStartApp");
+
+      if (startHelpClone) {
+        var helpContent = document.querySelector("#screen-help .help-content");
+        if (helpContent) {
+          startHelpClone.innerHTML = helpContent.innerHTML;
+        }
+      }
+
+      function soundIsEnabled() {
+        try {
+          var val = getComputedStyle(document.documentElement)
+            .getPropertyValue("--sound-enabled");
+          return (val + "").trim() !== "0";
+        } catch (e) {
+          return true;
+        }
+      }
+
+      function enterFullscreen() {
+        var el = document.documentElement;
+        var rfs =
+          el.requestFullscreen ||
+          el.webkitRequestFullscreen ||
+          el.mozRequestFullScreen ||
+          el.msRequestFullscreen;
+
+        if (rfs) {
+          try {
+            rfs.call(el);
+          } catch (e) {}
+        }
+      }
+
+      if (btnStartApp) {
+        btnStartApp.addEventListener("click", function () {
+          if (soundIsEnabled()) {
+            var clickEl = document.getElementById("snd-click");
+            if (clickEl) {
+              try {
+                clickEl.currentTime = 0;
+                clickEl.play().catch(function () { });
+              } catch (e) {}
+            }
+          }
+
+          if (soundIsEnabled()) {
+            var under = document.getElementById("snd-underwater");
+            if (under) {
+              try {
+                under.currentTime = 0;
+                under.play().catch(function () {});
+              } catch (e) {}
+            }
+          }
+
+          if (startOverlay) {
+            startOverlay.setAttribute("hidden", "hidden");
+          }
+
+          enterFullscreen();
+        });
+      }
+
+    })();
+  </script>
+</body>
+</html>
